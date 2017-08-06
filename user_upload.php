@@ -105,18 +105,27 @@ function createTable() {
         $sql = "SHOW DATABASES LIKE 'userdb'";
         $result = @mysqli_query($conn, $sql) 
             or die("Error querying database.");
-        if (empty($result)) {
+        
+        if (mysqli_num_rows($result) == 0) {
             $sql = "CREATE DATABASE userdb";
             $result = @mysqli_query($conn, $sql) 
                 or die("Error creating database");
+            echo "Created database 'userdb' successfully.\n";
         }
-        echo "Connected to database 'userdb' successfully.\n";
+        else echo "Found database 'userdb'\n";
 
+        //select the database
+        @mysqli_select_db($conn, "userdb")
+            or die("Cannot select database 'userdb'");
+        
         //create a table if it doesn't exist
-        $sql = "SELECT email FROM users";
+        $sql = <<<_EOT
+	        SHOW TABLES LIKE 'users';
+_EOT;
         $result = @mysqli_query($conn, $sql)
-            or die("Error querying the users table");
-        if (empty($result)) {
+            or die("Error querying the users table.\n");
+        
+        if (mysqli_num_rows($result) == 0) {
             $sql = <<<EOT
             CREATE TABLE users (
                 name    varchar(30) NOT NULL,
@@ -124,10 +133,12 @@ function createTable() {
                 email   varchar(50) PRIMARY KEY
                 )
 EOT;
-        $result = @mysqli_query($conn, $sql)
-            or die("Error creating table 'users'");
+            $result = @mysqli_query($conn, $sql)
+                or die("Error creating table 'users'");
+            echo "Created table 'users' successfully.\n";
         }
-        echo "Locating table 'users' successfully.\n";
+        else echo "Found table 'users'.\n";
+        
     }
 }
 
