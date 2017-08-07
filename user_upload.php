@@ -10,6 +10,7 @@ $dataArray = array();
 $username = "";
 $password = "";
 $host = "";
+$dbname = "userdb";
 
 //define command line options (directives)
 $shortOpts = "u:p:h:";
@@ -19,16 +20,6 @@ $opts = getopt($shortOpts, $longOpts);
 //notify the user when no arguments have been attached
 if (!$opts) {
     echo "Missing argument(s). Use argument '--help' to see the list of directives.\n";
-}
-
-if (isset($opts["file"]) && !isset($opts["dry_run"])) {
-    if (readCSV()) echo "Read file successfully.\n";
-    if (insertDatabase()) echo "Inserted into database successfully.\n";
-}
-
-//dry run
-if (isset($opts["dry_run"]) && isset($opts["file"])) {
-    if (readCSV()) echo "Read file successfully.\n";
 }
 
 //set MySQL user name
@@ -52,6 +43,18 @@ if (isset($opts["h"])) {
     echo "MySQL host $host is set.\n";
 }
 
+if (isset($opts["file"]) && !isset($opts["dry_run"])) {
+    if (readCSV()) echo "Read file successfully.\n";
+    if (insertDatabase()) echo "Inserted into database successfully.\n";
+}
+
+//dry run
+if (isset($opts["dry_run"]) && isset($opts["file"])) {
+    if (readCSV()) echo "Read file successfully.\n";
+}
+
+
+
 if (isset($opts["create_table"])) {
      createTable();
 }
@@ -71,16 +74,56 @@ function readCSV() {
     
     //read line by line
     while (!feof($file)) {
-        array_push($dataArray, fgetcsv($file));
+        //preprocess and validate each line of data
+        $oneRecord = fgetcsv($file);
+        if (dataFilter($oneRecord) === "passed") {
+            array_push($dataArray, $oneRecord);
+        }
+        else exit("Invalid email address contained. Insertion stopped.\n");
     }
     
     fclose($file);
     return true;
 }
 
+function dataFilter($record) {
+    //check if empty entry exists
+
+
+    return "passed";
+}
+
 function insertDatabase() {
-    //create a table named "users" if it doesn't exist
+    //create a table named "users" inside database 'userdb' if it doesn't exist
     createTable();
+
+    //create MySQL server connection
+    global $username, $password, $host, $dbname;
+    $conn = @mysqli_connect($host, $username, $password, $dbname)
+        or die("Oops! Failed to connect to MySQL server. " . mysqli_error($conn) . "\n");
+        
+    //iterate through the CSV rows and insert each record into the table
+    global $dataArray;
+    $arrlength = count($dataArray);
+
+    for ($i = 1; $i < $arrlength; $i++) {
+        $oneRecord = $dataArray[$i];
+        $name = $oneRecord[0];
+        $surname = $oneRecord[1];
+        $email = $oneRecord[2];
+        $sql = <<<EOT
+            INSERT INTO users (name, surname, email)
+            VALUES ('$name', '$surname', '$email');
+EOT;
+        $result = @mysqli_query($conn, $sql)
+            or die("Error inserting data. " . mysqli_error($conn) . "\n");
+        static $counter = 0;
+        $counter++;
+    }
+    echo "Inserted $counter rows successfully.\n";
+
+    mysqli_close($conn);
+
 
 }
 
@@ -98,32 +141,32 @@ function createTable() {
     }
     else {
         //create MySQL server connection
-        $conn = @mysqli_connect($host, $username, $password) 
-            or die("Oops! Failed to connect to MySQL server.\n");
+        $conn = @mysqli_connect($host, $username, $password)
+            or die("Oops! Failed to connect to MySQL server. " . mysqli_error($conn) . "\n");
 
         //create a database if it doesn't exist
         $sql = "SHOW DATABASES LIKE 'userdb'";
         $result = @mysqli_query($conn, $sql) 
-            or die("Error querying database.");
+            or die("Error querying database. " . mysqli_error($conn) . "\n");
         
         if (mysqli_num_rows($result) == 0) {
             $sql = "CREATE DATABASE userdb";
             $result = @mysqli_query($conn, $sql) 
-                or die("Error creating database");
+                or die("Error creating database. " . mysqli_error($conn) . "\n");
             echo "Created database 'userdb' successfully.\n";
         }
-        else echo "Found database 'userdb'\n";
+        else echo "Found database 'userdb'.\n";
 
         //select the database
         @mysqli_select_db($conn, "userdb")
-            or die("Cannot select database 'userdb'");
+            or die("Cannot select database 'userdb'. " . mysqli_error($conn) . "\n");
         
         //create a table if it doesn't exist
         $sql = <<<_EOT
 	        SHOW TABLES LIKE 'users';
 _EOT;
         $result = @mysqli_query($conn, $sql)
-            or die("Error querying the users table.\n");
+            or die("Error querying the users table. " . mysqli_error($conn) . "\n");
         
         if (mysqli_num_rows($result) == 0) {
             $sql = <<<EOT
@@ -134,10 +177,12 @@ _EOT;
                 )
 EOT;
             $result = @mysqli_query($conn, $sql)
-                or die("Error creating table 'users'");
+                or die("Error creating table 'users' " . mysqli_error($conn) . "\n");
             echo "Created table 'users' successfully.\n";
         }
         else echo "Found table 'users'.\n";
+
+        mysqli_close($conn);
         
     }
 }
