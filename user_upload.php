@@ -43,18 +43,18 @@ if (isset($opts["h"])) {
     echo "MySQL host $host is set.\n";
 }
 
+//read file and insert into database
 if (isset($opts["file"]) && !isset($opts["dry_run"])) {
     if (readCSV($opts["file"])) echo "Read file successfully.\n";
     if (insertDatabase()) echo "Inserted into database successfully.\n";
 }
 
-//dry run
+//dry run (without modifying database)
 if (isset($opts["dry_run"]) && isset($opts["file"])) {
     if (readCSV($opts["file"])) echo "Read file successfully.\n";
 }
 
-
-
+//create table
 if (isset($opts["create_table"])) {
      createTable();
 }
@@ -138,7 +138,7 @@ function insertDatabase() {
     //create MySQL server connection
     global $username, $password, $host, $dbname;
     $conn = @mysqli_connect($host, $username, $password, $dbname)
-        or die("Oops! Failed to connect to MySQL server. " . mysqli_error($conn) . "\n");
+        or die("Oops! Failed to connect to MySQL server. " . mysqli_connect_error() . "\n");
         
     //iterate through the CSV rows and insert each record into the table
     global $dataArray;
@@ -183,7 +183,7 @@ function createTable() {
     else {
         //create MySQL server connection
         $conn = @mysqli_connect($host, $username, $password)
-            or die("Oops! Failed to connect to MySQL server. " . mysqli_error($conn) . "\n");
+            or die("Oops! Failed to connect to MySQL server. " . mysqli_connect_error() . "\n");
 
         //create a database if it doesn't exist
         $sql = "SHOW DATABASES LIKE 'userdb'";
