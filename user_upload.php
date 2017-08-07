@@ -108,9 +108,11 @@ function insertDatabase() {
 
     for ($i = 1; $i < $arrlength; $i++) {
         $oneRecord = $dataArray[$i];
-        $name = $oneRecord[0];
-        $surname = $oneRecord[1];
-        $email = $oneRecord[2];
+        //escapes special characters in a string for use in an SQL statement
+        $name = mysqli_real_escape_string($conn, $oneRecord[0]);
+        $surname = mysqli_real_escape_string($conn, $oneRecord[1]);
+        $email = mysqli_real_escape_string($conn, $oneRecord[2]);
+
         $sql = <<<EOT
             INSERT INTO users (name, surname, email)
             VALUES ('$name', '$surname', '$email');
