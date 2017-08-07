@@ -114,7 +114,7 @@ function insertDatabase() {
         $email = mysqli_real_escape_string($conn, $oneRecord[2]);
 
         $sql = <<<EOT
-            INSERT INTO users (name, surname, email)
+            REPLACE INTO users (name, surname, email)
             VALUES ('$name', '$surname', '$email');
 EOT;
         $result = @mysqli_query($conn, $sql)
@@ -122,7 +122,8 @@ EOT;
         static $counter = 0;
         $counter++;
     }
-    echo "Inserted $counter rows successfully.\n";
+    echo "Inserted $counter rows successfully.\n" 
+        . "Duplicate records (if any) have overwritten existing ones.\n";
 
     mysqli_close($conn);
 
@@ -175,7 +176,8 @@ _EOT;
             CREATE TABLE users (
                 name    varchar(30) NOT NULL,
                 surname varchar(30) NOT NULL,
-                email   varchar(50) PRIMARY KEY
+                email   varchar(50) NOT NULL,
+                UNIQUE(email)
                 )
 EOT;
             $result = @mysqli_query($conn, $sql)
