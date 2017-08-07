@@ -74,23 +74,62 @@ function readCSV() {
     
     //read line by line
     while (!feof($file)) {
+
         //preprocess and validate each line of data
         $oneRecord = fgetcsv($file);
-        if (dataFilter($oneRecord) === "passed") {
+
+        //skip the title line ("name", "surname", "email")
+        if (strtolower(trim($oneRecord[0])) === "name")
+            continue;
+
+        //preprocess and validate data before inserting to database
+        $filterResult = dataFilter($oneRecord);
+        if ($filterResult === "passed") {
             array_push($dataArray, $oneRecord);
         }
-        else exit("Invalid email address contained. Insertion stopped.\n");
+        else exit($filterResult);
+
     }
     
     fclose($file);
     return true;
 }
 
-function dataFilter($record) {
+function dataFilter(&$record) {
+    $filterResult = "";
+    //strip unnecessary characters (extra space, tab, newline)
+    //name
+    $record[0] = trim($record[0]);
+    //surname
+    $record[1] = trim($record[1]);
+    //email
+    $record[2] = trim($record[2]);
+
+    echo "Processing record: " . $record[0] . " " . $record[1] . " " . $record[2] . "\n";
+
     //check if empty entry exists
+    if (empty($record[0]) || empty($record[1]) || empty($record[2]) ) {
+        $filterResult = "Reading file stopped: Name, surname or email cannot be empty.\n"
+                    . "Please make sure the CSV file has correct data formats.\n";
+    }
 
+    //validate email format
+    else if (!filter_var($record[2], FILTER_VALIDATE_EMAIL)) {
+        $filterResult = "Reading file stopped: Email format is not valid.\n"
+                    . "Please make sure the CSV file has correct data formats.\n";
+    }
 
-    return "passed";
+    //process name and surname format using capitalisation
+    //process email format by forcing lowercase
+    else {
+        $record[0] = ucfirst($record[0]);
+        $record[1] = ucfirst($record[1]);
+        $record[2] = strtolower($record[2]);
+
+        $filterResult = "passed";
+    }
+
+    return $filterResult;
 }
 
 function insertDatabase() {
