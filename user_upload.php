@@ -14,7 +14,7 @@ $dbname = "userdb";
 
 //define command line options (directives)
 $shortOpts = "u:p:h:";
-$longOpts = ["file::", "create_table", "dry_run", "help"];
+$longOpts = ["file:", "create_table", "dry_run", "help"];
 $opts = getopt($shortOpts, $longOpts);
 
 //notify the user when no arguments have been attached
@@ -44,13 +44,13 @@ if (isset($opts["h"])) {
 }
 
 if (isset($opts["file"]) && !isset($opts["dry_run"])) {
-    if (readCSV()) echo "Read file successfully.\n";
+    if (readCSV($opts["file"])) echo "Read file successfully.\n";
     if (insertDatabase()) echo "Inserted into database successfully.\n";
 }
 
 //dry run
 if (isset($opts["dry_run"]) && isset($opts["file"])) {
-    if (readCSV()) echo "Read file successfully.\n";
+    if (readCSV($opts["file"])) echo "Read file successfully.\n";
 }
 
 
@@ -66,10 +66,9 @@ if (isset($opts["help"])) {
 
 
 
-
-function readCSV() {
+function readCSV($fileName) {
     global $dataArray;
-    $file = fopen("users.csv", "r")  
+    $file = fopen($fileName, "r")  
         or die("Unable to open file. Please check the existence or permission of the file.\n");
     
     //read line by line
