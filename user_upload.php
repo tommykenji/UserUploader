@@ -50,8 +50,11 @@ if (isset($opts["file"]) && !isset($opts["dry_run"])) {
 }
 
 //dry run (without modifying database)
-if (isset($opts["dry_run"]) && isset($opts["file"])) {
-    if (readCSV($opts["file"])) echo "Read file successfully.\n";
+if (isset($opts["dry_run"]) ) {
+    if (isset($opts["file"]) ) {
+        if (readCSV($opts["file"])) echo "Read file successfully.\n";
+    }
+    else echo "Oops! You need to specify the file name as well using --file [filename].\n";
 }
 
 //create table
@@ -233,26 +236,30 @@ EOT;
 function printHelp() {
     echo <<<EOT
     -----------------------------
-    --file [csv file name] 
-    This is the name of the CSV to be parsed
+    --file csv_file_name -u username -p password -h hostname
+    Read a given CSV file and insert the data into a specified database.
+    -u, -p, -h: see below.
 
-    --create_table 
-    This will cause the MySQL users table to be built 
-    (and no further action will be taken)
+    --create_table -u username -p password -h hostname
+    This will cause the MySQL users table to be built and no further action will be taken.
+    -u, -p, -h: see below.
 
-    --dry_run 
+    --dry_run --file csv_file_name
     This will be used with the --file directive in the instance that 
     we want to run the script but not insert into the DB. 
     All other functions will be executed, but the database won't be altered.
 
-    -u
-    MySQL username
+    -u username
+    Specify MySQL username. 
+    Used with --file or --create_table. 
 
-    -p
-    MySQL password
+    -p password
+    Specify MySQL password. 
+    Used with --file or --create_table. 
 
-    -h
-    MySQL host
+    -h hostname
+    Specify MySQL host. 
+    Used with --file or --create_table. 
 
     --help
     Output the above list of directives with details.
